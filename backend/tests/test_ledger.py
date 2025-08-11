@@ -1,7 +1,31 @@
+"""
+Unit Tests – ledger_service.run_round
+
+Verifies that:
+    • The run_round() function updates balances correctly.
+    • All balances are returned as floats in API-compatible form.
+    • A history record is appended.
+    • Unknown tie strategies are handled gracefully.
+"""
+
 from decimal import Decimal
 from services import ledger_service
 
-def test_run_round_updates_balances(tmp_path):
+def test_run_round_updates_balances_and_history(tmp_path):
+    """
+    GIVEN
+        - Two participants ("A" and "B") with prices 3.0 and 5.0.
+        - Initial balances of 0.0 each.
+    WHEN
+        - run_round() is called with both participants and a non-standard
+          tie-breaking strategy string 'alpha'.
+    THEN
+        - The result dictionary contains a 'payer' key with a valid participant name.
+        - The 'balances' values are floats, not Decimal.
+        - Participant balances are adjusted according to pricing and payer rules.
+        - The history contains exactly one new transaction record.
+    """
+    # Arrange: create isolated test JSON/CSV files
     prices_file = tmp_path / "prices.json"
     balances_file = tmp_path / "balances.json"
     history_file = tmp_path / "history.csv"
@@ -13,6 +37,25 @@ def test_run_round_updates_balances(tmp_path):
     ledger_service.BALANCES_FILE = str(balances_file)
     ledger_service.HISTORY_FILE = str(history_file)
 
-    result = ledger_service.run_round(["A", "B"], "alpha")
-    assert "payer" in result
-    assert all(isinstance(v, float) for v in result["balances"].values())
+    # Act: execute a round
+    result = ledger_service.run_round(["A", "B"], "alpha")  # 'alpha' falls back to default tie strategy
+
+    # Assert: general structure
+    assert "payer" in result, "Result must contain 'payer'"
+    assert result["payer"] in ["A", "B"], "Payer must be one of the participants"
+
+    # All balances must be floats
+    assert all(isinstance(v, float) for v in result["balances"].values()), \
+        "All balances should be serialized to floats"
+
+    # Balances should reflect one credit for payer and one debit for each participant's cost
+    total_cost = sum([3.0, 5.0])
+    payer_balance = result["balances"][result["payer"]]
+    assert abs(payer_balance - total_cost) < 0.0001, \
+        "Payer should have been credited with the total cost"
+
+    # History should now contain exactly one entry
+    assert len(result["history"]) == 1, "Exactly one history entry should exist"
+    history_entry = result["history"][0]
+    assert history_entry["payer"] == result["payer"]
+    assert history_entry["total_cost"] == total_cost
