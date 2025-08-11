@@ -1,5 +1,11 @@
-from pydantic import BaseModel, constr, condecimal
+from pydantic import BaseModel, Field
+from typing import Annotated
+
+NameType = Annotated[
+    str,
+    Field(min_length=1, max_length=40, pattern=r"^[A-Za-z\s\-']+$")
+]
 
 class SetPriceRequest(BaseModel):
-    name: constr(min_length=1, max_length=40, regex=r"^[A-Za-z\s\-']+$")
-    price: condecimal(gt=0, decimal_places=2)
+    name: NameType
+    price: float

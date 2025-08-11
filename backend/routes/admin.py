@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from schemas.set_price import SetPriceRequest
 from schemas.remove_person import RemovePersonRequest
 
-from storage.json_store import load_json, save_json_atomic
+from storage.json_store import load_json, save_json
 from storage.history_store import reset_history, read_history
 from config import PRICES_FILE, BALANCES_FILE, HISTORY_FILE
 
@@ -26,8 +26,8 @@ def set_price():
     prices[data.name] = float(data.price)
     balances.setdefault(data.name, 0.0)
 
-    save_json_atomic(PRICES_FILE, prices)
-    save_json_atomic(BALANCES_FILE, balances)
+    save_json(PRICES_FILE, prices)
+    save_json(BALANCES_FILE, balances)
 
     return jsonify({"ok": True, "prices": prices, "balances": balances}), 200
 
@@ -53,8 +53,8 @@ def remove_person():
         del balances[data.name]
         removed = True
 
-    save_json_atomic(PRICES_FILE, prices)
-    save_json_atomic(BALANCES_FILE, balances)
+    save_json(PRICES_FILE, prices)
+    save_json(BALANCES_FILE, balances)
 
     return jsonify({"ok": removed, "prices": prices, "balances": balances}), 200
 
