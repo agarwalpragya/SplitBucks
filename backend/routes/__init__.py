@@ -19,13 +19,13 @@ Blueprints included:
     - Remove Person API
 """
 
-from .state import bp_state
-from .next import bp_next
-from .run import bp_run
-from .reset_balances import bp_reset_balances
-from .clear_history import bp_clear_history
-from .set_price import bp_set_price
-from .remove_person import bp_remove_person
+from .state import state_bp
+from .next import next_bp
+from .run import run_round_bp
+from .reset_balances import reset_balances_bp
+from .clear_history import clear_history_bp
+from .set_price import set_price_bp
+from .remove_person import remove_person_bp
 
 def register_blueprints(app):
     """
@@ -38,10 +38,10 @@ def register_blueprints(app):
         - Attaches all imported blueprints to the app instance.
         - Each blueprint defines a URL prefix according to its feature scope.
     """
-    app.register_blueprint(bp_state)           # /api/state
-    app.register_blueprint(bp_next)            # /api/next
-    app.register_blueprint(bp_run)             # /api/run
-    app.register_blueprint(bp_reset_balances)  # /api/reset-balances
-    app.register_blueprint(bp_clear_history)   # /api/clear-history
-    app.register_blueprint(bp_set_price)       # /api/set-price
-    app.register_blueprint(bp_remove_person)   # /api/remove-person
+    app.register_blueprint(state_bp)           # /api/state
+    app.register_blueprint(next_bp)            # /api/next
+    app.register_blueprint(run_round_bp)             # /api/run
+    app.register_blueprint(reset_balances_bp)  # /api/reset-balances
+    app.register_blueprint(clear_history_bp)   # /api/clear-history
+    app.register_blueprint(set_price_bp)       # /api/set-price
+    app.register_blueprint(remove_person_bp)   # /api/remove-person
