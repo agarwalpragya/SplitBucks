@@ -43,13 +43,14 @@
 Clone this repository:
 
 git clone https://github.com/agarwalpragya/SplitBucks.git
-cd coffee-payment-tracker
+cd SplitBucks
 ```
 
 ### Run backend
 ```
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
