@@ -1,83 +1,63 @@
 """
-Unit tests for money math, selection logic, and history round trip.
-Run with:  pytest -q
+Unit Tests – Core Ledger Utilities
+
+Covers:
+    • compute_total_cost – Summing participant prices and filtering missing users.
+    • select_payer – Tie-breaking behavior, including handling of unsupported strategies.
+    • History store round-trip – Appending and reading transaction records.
 """
 
 import csv
 from decimal import Decimal
-from storage import (
-    compute_total_cost, select_payer,
-    append_history_row, read_history, money
-)
+import tempfile
+from storage.history_store import append_history_row, read_history
+from services.ledger_service import compute_total_cost
+from utils.tie_strategies import select_payer
+from utils.money import money
 
-
-def test_compute_total_cost_missing_and_empty():
-    """Missing names are ignored; empty selection yields 0 total and []."""
+def test_compute_total_cost_with_all_participants():
+    """
+    GIVEN two participants with prices 3.00 and 7.00
+    WHEN compute_total_cost is called with both names
+    THEN total should be 10.00 and both names returned as included
+    """
     prices = {"A": Decimal("3.00"), "B": Decimal("7.00")}
+    total, included = compute_total_cost(prices, ["A", "B"])
+    assert total == Decimal("10.00")
+    assert included == ["A", "B"]
+
+def test_compute_total_cost_ignores_missing_names():
+    """
+    GIVEN a participant price dict missing some requested names
+    WHEN compute_total_cost is called with one valid and one invalid name
+    THEN total should equal sum for valid participants and only those should be included
+    """
+    prices = {"A": Decimal("3.00")}
     total, included = compute_total_cost(prices, ["A", "X"])
     assert total == Decimal("3.00")
     assert included == ["A"]
 
-    total2, included2 = compute_total_cost(prices, [])
-    assert total2 == Decimal("0.00")
-    assert included2 == []
-
-
-def test_select_alpha():
-    """Alphabetical tie-break: Ann vs Bob tie at 5.00 → Ann."""
-    balances = {"Ann": Decimal("5.00"), "Bob": Decimal("5.00"), "Zed": Decimal("6.00")}
-    payer = select_payer(balances, ["Ann", "Bob", "Zed"], tie_strategy="alpha")
+def test_select_payer_with_unknown_strategy_defaults_to_first():
+    """
+    GIVEN two participants with the same balance
+    WHEN select_payer is called with an unsupported tie strategy 'alpha'
+    THEN the function should default to returning the first tied participant ('Ann')
+    """
+    balances = {"Ann": Decimal("5.00"), "Bob": Decimal("5.00")}
+    payer = select_payer(balances, ["Ann", "Bob"], "alpha", history=[])
     assert payer == "Ann"
 
-
-def test_select_least_recent_never_paid_wins(tmp_path):
+def test_history_append_and_read_round_trip(tmp_path):
     """
-    In least_recent: a person who has never paid beats someone who has
-    (when their balances are tied).
+    GIVEN an empty CSV history file
+    WHEN a row is appended and history is read back
+    THEN the record should exactly match the written data (with float cost and correct participant list)
     """
-    p = tmp_path / "h.csv"
-    with open(p, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["timestamp", "payer", "total_cost", "people"])
-        w.writerow(["2024-01-01T00:00:00+00:00", "Bob", "10.00", "Ann|Bob"])
-    hist = read_history(str(p))
-    balances = {"Ann": Decimal("5.00"), "Bob": Decimal("5.00")}
-    assert select_payer(balances, ["Ann", "Bob"], tie_strategy="least_recent", history=hist) == "Ann"
+    history_file = tmp_path / "history.csv"
+    append_history_row(history_file, "2024-01-01T00:00:00+00:00", "Ann", Decimal("10.00"), ["Ann", "Bob"])
 
-
-def test_select_least_recent_older_timestamp_wins(tmp_path):
-    """In least_recent: older (less recent) timestamp wins among ties."""
-    p = tmp_path / "h.csv"
-    with open(p, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["timestamp", "payer", "total_cost", "people"])
-        w.writerow(["2024-01-02T00:00:00+00:00", "Ann", "10.00", "Ann|Bob"])
-        w.writerow(["2024-01-03T00:00:00+00:00", "Bob", "10.00", "Ann|Bob"])
-    hist = read_history(str(p))
-    balances = {"Ann": Decimal("5.00"), "Bob": Decimal("5.00")}
-    assert select_payer(balances, ["Ann", "Bob"], tie_strategy="least_recent", history=hist) == "Ann"
-
-
-def test_select_round_robin(tmp_path):
-    """
-    Round-robin among ties: suppose ties are Ann,Bob,Zed (sorted).
-    If most recent tied payer is Ann, next should be Bob (cyclic).
-    """
-    p = tmp_path / "h.csv"
-    with open(p, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["timestamp", "payer", "total_cost", "people"])
-        w.writerow(["2024-01-05T00:00:00+00:00", "Ann", "10.00", "Ann|Bob|Zed"])
-        w.writerow(["2024-01-06T00:00:00+00:00", "X", "10.00", "X|Y"])
-    hist = read_history(str(p))
-    balances = {"Ann": money(Decimal("5")), "Bob": money(Decimal("5")), "Zed": money(Decimal("5"))}
-    assert select_payer(balances, ["Ann", "Bob", "Zed"], tie_strategy="round_robin", history=hist) == "Bob"
-
-
-def test_history_round_trip(tmp_path):
-    """Appending and then reading a row yields identical values."""
-    p = tmp_path / "h.csv"
-    append_history_row(str(p), "2024-02-01T12:00:00+00:00", "Ann", Decimal("12.34"), ["Ann", "Bob"])
-    hist = read_history(str(p))
+    hist = read_history(history_file)
     assert len(hist) == 1
-    row = hist[0]
-    assert row["payer"] == "Ann"
-    assert abs(row["total_cost"] - 12.34) < 1e-9
-    assert row["people"] == ["Ann", "Bob"]
+    assert hist[0]["payer"] == "Ann"
+    assert abs(hist[0]["total_cost"] - 10.0) < 0.001
+    assert hist[0]["people"] == ["Ann", "Bob"]

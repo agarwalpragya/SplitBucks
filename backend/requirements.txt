@@ -1,3 +1,17 @@
+
+# Web framework
 Flask==3.0.3
 Flask-Cors==4.0.1
+
+# Request validation
+pydantic==2.8.2
+python-dotenv==1.0.1  # for .env config loading
+
+# Testing
 pytest==8.3.2
+pytest-cov==5.0.0
+
+# Development tooling (optional but good for code quality in interviews)
+black==24.4.0         # code formatter
+flake8==7.1.0         # linting
+mypy==1.10.0          # type checking
