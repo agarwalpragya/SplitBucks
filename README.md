@@ -42,7 +42,7 @@
 ```
 Clone this repository:
 
-git clone https://github.com/agarwalpragya/coffee-payment-tracker.git
+git clone https://github.com/agarwalpragya/SplitBucks.git
 cd coffee-payment-tracker
 ```
 
