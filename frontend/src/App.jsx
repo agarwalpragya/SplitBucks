@@ -106,9 +106,9 @@ export default function App(){
               SplitBucks
               <img src="/favicon.png" alt="SplitBucks Logo" style={{ height: "100px" }} />
             </h1>
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <button onClick={refresh} style={{backgroundColor:"rgb(150, 121, 105)"}} className="px-3 py-2 rounded-xl bg-slate-900 text-white">Fresh Brew</button>
-            </div>
+            </div> */}
           </header>
 
           <h2 className="text-4l"> Payment tracker for your Brew-Crew️ 🤟🏼</h2>
@@ -134,13 +134,13 @@ export default function App(){
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-xl">People & Prices</h2>
               <div className="flex gap-4">
-                <select className="border rounded px-3 py-2 text-sm" value={tie} onChange={e=>setTie(e.target.value)}>
-                  <option value="" disabled>Tie-Breaker</option> {/* Default option */}
+                {/* <select className="border rounded px-3 py-2 text-sm" value={tie} onChange={e=>setTie(e.target.value)}>
+                  <option value="" disabled>Tie-Breaker</option> 
                   <option value="least_recent">Least recent</option>
                   <option value="alpha">Alphabetical</option>
                   <option value="round_robin">Round robin</option>
                   <option value="random">Random</option>
-                </select>
+                </select> */}
                 <button onClick={resetBalances} style={{ backgroundColor: "rgb(242, 196, 78)"}} className="px-3 py-2 rounded-xl text-white">Clear the Tab</button>
               </div>
             </div>
