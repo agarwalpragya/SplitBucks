@@ -4,7 +4,8 @@ Blueprint Registration Module.
 This module centralizes the import and registration of all API blueprints
 used by the Flask application.
 
-Why a single registrar?
+Single registrar-style approach:
+    • Simplifies the app factory pattern by consolidating all route definitions.
     • Ensures consistent naming and URL namespaces.
     • Makes it easy to enable/disable feature sets.
     • Provides a clear overview of exposed endpoints.

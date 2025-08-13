@@ -1,5 +1,5 @@
 """
-Management Routes (no admin separation)
+Management Routes
 
 Purpose:
     Expose simple, RESTful endpoints under /api for managing:
@@ -7,12 +7,9 @@ Purpose:
         • Users (create via set price, remove)
         • Account balances reset
         • History clearing
-
-Design goals:
-    - Keep controllers thin (validation + delegation to storage/utilities)
-    - Use REST verbs and idempotent semantics where appropriate
-    - Return stable, predictable response shapes
-    - Keep money logic in services/storage; transport concerns here
+    This module provides a unified interface for administrative operations
+    without complex business logic.
+    All operations are idempotent and return consistent JSON responses.
 
 Quick routing table:
     PUT    /api/users/<name>/price     → set_price()         (idempotent upsert; returns 200 + state)
@@ -114,6 +111,21 @@ def set_price(name: str):
     # Load current state
     prices = load_json(PRICES_FILE, {})
     balances = load_json(BALANCES_FILE, {})
+
+    # ------------------------------------------------------------------
+    # POLICY GUARD (case-sensitive uniqueness):
+    # If a user exists with the same name ignoring case, but NOT with the
+    # exact casing provided, reject with 409 Conflict.
+    # Example: "Bob" exists → PUT /users/BOB/price returns 409.
+    # ------------------------------------------------------------------
+    provided = (name or "").strip()
+    lower_keys = {k.lower() for k in set(prices.keys()) | set(balances.keys())}
+    if provided.lower() in lower_keys and (provided not in prices and provided not in balances):
+        return jsonify({
+            "ok": False,
+            "error": "name already exists with different casing",
+            "existing": _canon_key(provided, prices=prices, balances=balances)
+        }), 409
 
     # Compute canonical storage key: reuse existing casing or create new
     canon = _ensure_user_entry(name, prices=prices, balances=balances)
