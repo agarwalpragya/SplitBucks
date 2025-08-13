@@ -11,7 +11,7 @@ import csv
 from decimal import Decimal
 import tempfile
 from storage.history_store import append_history_row, read_history
-from services.ledger_service import compute_total_cost
+from storage import compute_total_cost
 from utils.tie_strategies import select_payer
 from utils.money import money
 
