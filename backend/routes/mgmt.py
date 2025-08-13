@@ -46,16 +46,24 @@ mgmt_bp = Blueprint("mgmt", __name__, url_prefix="/api")
 # ------------------------------- Schemas --------------------------------
 # Minimal Pydantic request models to validate and coerce inputs at the edge.
 
+PriceType = condecimal(gt=0, max_digits=12, decimal_places=2)
+
 class PriceOnly(BaseModel):
     # Positive currency amount with two decimal places
-    price: condecimal(gt=0, max_digits=12, decimal_places=2)
+    price: Decimal
+
+    # Pydantic validator to enforce constraints
+    @classmethod
+    def __get_validators__(cls):
+        yield from Decimal.__get_validators__()
+        yield condecimal(gt=0, max_digits=12, decimal_places=2)
 
 class ResetBalancesBody(BaseModel):
     # Optional flag to also clear history when resetting balances
     clear_history: Optional[bool] = False
 
 # ------------------------------- Helpers --------------------------------
-def _canon_key(name: str, *, prices: dict, balances: dict) ->Optional[str]:
+def _canon_key(name: str, *, prices: dict, balances: dict) -> Optional[str]:
     """
     Resolve a display name to the canonical stored key (case-insensitive).
 
