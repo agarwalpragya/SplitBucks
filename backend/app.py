@@ -49,7 +49,7 @@ def create_app() -> Flask:
     )
 
     # Allow cross-origin requests for API endpoints
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]}})
 
     # Register all API blueprints
     register_blueprints(app)
@@ -67,7 +67,7 @@ def create_app() -> Flask:
             return send_from_directory(FRONTEND_BUILD_DIR, "index.html")
         return (
             "Frontend not built yet. Run `npm install && npm run build` to generate static files.",
-            200
+            503
         )
 
     # -----------------------------------------------------------------

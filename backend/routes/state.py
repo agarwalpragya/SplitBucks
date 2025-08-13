@@ -7,14 +7,19 @@ application state, including:
     • Current account balances.
     • Full transaction history.
 
-Intended for client consumption to synchronize with the current backend state.
+Note:
+    This endpoint is PURE READ-ONLY. It does not seed or mutate any files.
+    If prices/balances are empty (e.g., after deleting all users), it returns {}.
 """
 
 from flask import Blueprint, jsonify
 from storage import (
-    _ensure_defaults,   # Ensures default prices/balances/history files exist
-    HISTORY_FILE,
+    load_json,          # pure read; returns default {} if file missing
+    ensure_history,     # make sure history file + header exist (non-destructive)
     read_history,
+    PRICES_FILE,
+    BALANCES_FILE,
+    HISTORY_FILE,
 )
 
 # Blueprint registration for state-related operations
@@ -23,27 +28,30 @@ state_bp = Blueprint("state", __name__)
 @state_bp.get("/api/state")
 def get_state_endpoint():
     """
-    Retrieve the current system state.
-
-    Behavior:
-        - Ensures default price and balance data are loaded.
-        - Serializes Decimal values to floats for JSON output.
-        - Includes full transaction history for client synchronization.
+    Retrieve the current system state without seeding defaults.
 
     Returns:
-        tuple: Flask JSON response and HTTP status code (200 on success):
+        200 JSON:
             {
                 "prices": { "<name>": <float>, ... },
                 "balances": { "<name>": <float>, ... },
-                "history": [ ... ]   # List of transaction records from history.csv
+                "history": [ ... ]
             }
     """
-    # Ensure initial data files exist, retrieve as Decimal values
-    prices_dec, balances_dec = _ensure_defaults()
+    # Pure reads; do NOT call _ensure_defaults() here
+    prices = load_json(PRICES_FILE, {})        # may be {}
+    balances = load_json(BALANCES_FILE, {})    # may be {}
 
-    # Return normalized floats for JSON compatibility
+    # Ensure history file exists (non-destructive), then read it
+    ensure_history(HISTORY_FILE)
+    history = read_history(HISTORY_FILE)
+
+    # Normalize values to floats for JSON compatibility (safe even if already floats)
+    prices_out = {k: float(v) for k, v in prices.items()}
+    balances_out = {k: float(v) for k, v in balances.items()}
+
     return jsonify({
-        "prices": {name: float(price) for name, price in prices_dec.items()},
-        "balances": {name: float(balance) for name, balance in balances_dec.items()},
-        "history": read_history(HISTORY_FILE),
+        "prices": prices_out,
+        "balances": balances_out,
+        "history": history,
     }), 200

@@ -56,7 +56,7 @@ def run_round_endpoint():
         # Parse and validate request JSON against schema
         payload = RunRoundRequest.parse_obj(request.get_json(force=True))
     except ValidationError as e:
-        return jsonify({"error": e.errors()}), 400
+        return jsonify({"error": e.errors()}), 422
 
     try:
         # Execute business logic to determine payer and update ledger

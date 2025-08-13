@@ -23,6 +23,7 @@ Environment variables (optional):
 import os
 from decimal import Decimal
 from dotenv import load_dotenv
+from decimal import Decimal as D
 
 # ---------------------------------------------------------------------
 # Load environment variables from .env if present
@@ -46,13 +47,13 @@ HISTORY_FILE = os.getenv("HISTORY_FILE", os.path.join(DATA_DIR, "history.csv"))
 # Default pricing and balances
 # ---------------------------------------------------------------------
 DEFAULT_PRICES = {
-    "Bob": 4.50,
-    "Jim": 3.00,
-    "Sara": 5.00,
+    "Bob": D("4.50"),
+    "Jim": D("3.00"),
+    "Sara": D("5.00"),
 }
 
 # Default starting balances: zero for all default participants
-DEFAULT_BALANCES = {name: 0.0 for name in DEFAULT_PRICES}
+DEFAULT_BALANCES = {name: D("0.00") for name in DEFAULT_PRICES}
 
 # Currency rounding precision (two decimal places)
 CENTS = Decimal("0.01")
